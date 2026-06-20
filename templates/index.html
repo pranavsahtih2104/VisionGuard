@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VisionGuard — Surveillance Dashboard</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3e;
+    --text: #e2e8f0; --muted: #8892a4; --accent: #3b82f6;
+    --green: #22c55e; --red: #ef4444; --amber: #f59e0b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; }
+
+  /* ── Header ── */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px; background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .logo { font-size: 18px; font-weight: 600; letter-spacing: .02em; }
+  .logo span { color: var(--accent); }
+  .status-pill {
+    font-size: 12px; padding: 4px 12px; border-radius: 20px;
+    background: rgba(34,197,94,.12); color: var(--green);
+    border: 1px solid rgba(34,197,94,.25);
+  }
+
+  /* ── Layout ── */
+  .main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 56px); }
+  .feed-col { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .side-col  { border-left: 1px solid var(--border); overflow-y: auto; }
+
+  /* ── Stat cards ── */
+  .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px;
+  }
+  .stat-val { font-size: 26px; font-weight: 600; }
+  .stat-lbl { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  /* ── Video feed ── */
+  .feed-wrap {
+    flex: 1; background: #000; border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--border); position: relative; min-height: 320px;
+  }
+  .feed-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .feed-label {
+    position: absolute; top: 10px; left: 12px;
+    font-size: 11px; color: var(--green); background: rgba(0,0,0,.6);
+    padding: 3px 8px; border-radius: 4px;
+  }
+
+  /* ── Sidebar ── */
+  .side-header { padding: 14px 16px; font-size: 13px; font-weight: 500; border-bottom: 1px solid var(--border); }
+  .log-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .log-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-green { background: var(--green); }
+  .dot-red   { background: var(--red); }
+  .log-name  { font-weight: 500; flex: 1; }
+  .log-time  { font-size: 11px; color: var(--muted); }
+
+  /* ── Register panel ── */
+  .register-panel { padding: 16px; border-top: 1px solid var(--border); margin-top: auto; }
+  .register-panel h3 { font-size: 13px; font-weight: 500; margin-bottom: 12px; }
+  .input-row { display: flex; gap: 8px; }
+  input[type=text] {
+    flex: 1; background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); border-radius: 7px; padding: 8px 12px; font-size: 13px;
+  }
+  input[type=text]:focus { outline: none; border-color: var(--accent); }
+  button.primary {
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 7px; padding: 8px 14px; font-size: 13px; cursor: pointer;
+  }
+  button.primary:hover { opacity: .88; }
+  .upload-label {
+    display: block; margin-top: 8px; font-size: 12px; color: var(--muted);
+    cursor: pointer; border: 1px dashed var(--border); border-radius: 7px;
+    padding: 8px 12px; text-align: center;
+  }
+  .upload-label:hover { border-color: var(--accent); }
+  #preview { width: 100%; border-radius: 7px; margin-top: 8px; display: none; }
+  .msg { font-size: 12px; margin-top: 6px; min-height: 18px; }
+  .msg.ok  { color: var(--green); }
+  .msg.err { color: var(--red); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Vision<span>Guard</span></div>
+  <div class="status-pill">● LIVE</div>
+</header>
+
+<div class="main">
+  <!-- Left: stats + feed -->
+  <div class="feed-col">
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-val" id="s-persons">—</div>
+        <div class="stat-lbl">Registered persons</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="s-recog">—</div>
+        <div class="stat-lbl">Today's recognitions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="s-alerts" style="color:var(--red)">—</div>
+        <div class="stat-lbl">Total alerts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color:var(--green)">97%</div>
+        <div class="stat-lbl">Model accuracy</div>
+      </div>
+    </div>
+
+    <div class="feed-wrap">
+      <img src="/video_feed" alt="Live camera feed" id="feed-img">
+      <div class="feed-label">● LIVE FEED</div>
+    </div>
+  </div>
+
+  <!-- Right: logs + register -->
+  <div class="side-col" style="display:flex;flex-direction:column">
+    <div class="side-header">Recognition log</div>
+    <div id="log-list" style="flex:1;overflow-y:auto"></div>
+
+    <div class="register-panel">
+      <h3>Register new person</h3>
+      <div class="input-row">
+        <input type="text" id="reg-name" placeholder="Full name">
+        <button class="primary" onclick="registerPerson()">Register</button>
+      </div>
+      <label class="upload-label" for="reg-img">
+        Click to upload face image
+        <input type="file" id="reg-img" accept="image/*" style="display:none" onchange="previewImg(this)">
+      </label>
+      <img id="preview">
+      <div class="msg" id="reg-msg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let imgB64 = null;
+
+async function loadStats() {
+  const d = await fetch('/api/stats').then(r=>r.json());
+  document.getElementById('s-persons').textContent = d.total_persons;
+  document.getElementById('s-recog').textContent   = d.today_recognitions;
+  document.getElementById('s-alerts').textContent  = d.total_alerts;
+}
+
+async function loadLogs() {
+  const logs = await fetch('/api/logs').then(r=>r.json());
+  const ul   = document.getElementById('log-list');
+  ul.innerHTML = logs.map(l => `
+    <div class="log-item">
+      <div class="log-dot dot-green"></div>
+      <div class="log-name">${l.name}</div>
+      <div class="log-time">${l.timestamp.slice(11,19)}</div>
+    </div>
+  `).join('') || '<div style="padding:16px;font-size:13px;color:var(--muted)">No logs yet</div>';
+}
+
+function previewImg(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    imgB64 = e.target.result;
+    const prev = document.getElementById('preview');
+    prev.src = imgB64;
+    prev.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function registerPerson() {
+  const name = document.getElementById('reg-name').value.trim();
+  const msg  = document.getElementById('reg-msg');
+  if (!name)  { msg.className='msg err'; msg.textContent='Enter a name.'; return; }
+  if (!imgB64){ msg.className='msg err'; msg.textContent='Upload a face image.'; return; }
+  msg.className='msg'; msg.textContent='Registering...';
+  const res = await fetch('/api/register', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({name, image: imgB64})
+  }).then(r=>r.json());
+  if (res.success) {
+    msg.className='msg ok'; msg.textContent=`✓ ${name} registered (ID: ${res.person_id})`;
+    document.getElementById('reg-name').value = '';
+    document.getElementById('preview').style.display = 'none';
+    imgB64 = null;
+    loadStats();
+  } else {
+    msg.className='msg err'; msg.textContent=`Error: ${res.error}`;
+  }
+}
+
+// Poll every 5 s
+loadStats(); loadLogs();
+setInterval(loadStats, 5000);
+setInterval(loadLogs,  5000);
+</script>
+</body>
+</html>

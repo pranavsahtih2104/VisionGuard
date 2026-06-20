@@ -1,0 +1,24 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+venv/
+env/
+.venv/
+
+# Model weights (large files)
+models/*.h5
+models/*.caffemodel
+models/*.pb
+
+# Database & unknown faces
+database/visionguard.db
+database/unknown_faces/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
